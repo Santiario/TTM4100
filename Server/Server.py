@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 import SocketServer
-
+import random
 """
 Variables and functions that must be used by all the ClientHandler objects
 must be written here (e.g. a dictionary for connected clients)
 """
 
+connected_clients = {}
+
+
 class ClientHandler(SocketServer.BaseRequestHandler):
     """
-    This is the ClientHandler class. Everytime a new client connects to the
+    This is the ClientHandler class. Every time a new client connects to the
     server, a new ClientHandler object will be created. This class represents
     only connected clients, and not the server itself. If you want to write
     logic for the server, you must write it outside this class
@@ -22,11 +25,17 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         self.port = self.client_address[1]
         self.connection = self.request
 
+        connected_clients[random.randint(0, 40)] = self
+
+
+
         # Loop that listens for messages from the client
         while True:
             received_string = self.connection.recv(4096)
-            
-            # TODO: Add handling of received payload from client
+            for client in connected_clients.values():
+                print client
+                client.connection.sendall(received_string.upper())
+
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
