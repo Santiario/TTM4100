@@ -23,26 +23,46 @@ class Client:
 
         # Instantiate a MessageReciever to handle recieved messages in parallell
         # MessageReceiver calls receive_message to print the message to the console
-        self.receiver = MessageReceiver(self, self.connection)
-
-
+        self.parser = MessageParser()
+        self.receiver = MessageReceiver(self, self.connection, self.parser)
         self.run()
 
     def connect(self):
         self.connection.connect((self.host, self.server_port))
-        username = raw_input('Please enter username: ')
-        self.login(username)
+        self.logged_in = False
+        while not self.logged_in:
+            username = raw_input('Please enter username: ')
+            self.login(username)
+            response = json.loads(self.connection.recv(4096))
+            if response['response'] == 'info':
+                self.logged_in = True
+                print response['content']
+            else:
+                print response['response'] + ": " + response['content']
 
 
     def run(self):
         # Code that runs in a loop until the user exits
         while True:
-            command = raw_input("Please enter a command: ").lower()
-            if command == 'exit':
-                break
+            command = raw_input()
+            if command.lower() == 'logout' or \
+                command.lower() == 'names' or \
+                command.lower() == 'help':
+                payload = {
+                    'request': command.lower(),
+                    'content': None
+                }
+                self.connection.sendall(json.dumps(payload))
+                if command.lower() == 'logout':
+                    self.disconnect()
+                    break
             else:
-                self.connection.sendall(command)
-        print "Exit command entered"
+                payload = {
+                    'request': 'msg',
+                    'content': command
+                }
+                self.connection.sendall(json.dumps(payload))
+        print "Chatroom disconnected."
 
     def login(self, username):
         payload = {
@@ -52,13 +72,12 @@ class Client:
         payload = json.dumps(payload)
         self.connection.sendall(payload)
 
-
     def disconnect(self):
         self.connection.close()
-        print "Disconnected"
 
     def receive_message(self, message):
-        print message
+        pass
+        # This method is not supposed to be used?
 
     def send_payload(self, data):
         # TODO: Handle sending of a payload

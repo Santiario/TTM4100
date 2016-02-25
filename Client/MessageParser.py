@@ -1,4 +1,5 @@
 import json
+import math
 
 class MessageParser():
     def __init__(self):
@@ -6,26 +7,28 @@ class MessageParser():
         self.possible_responses = {
             'error': self.parse_error,
             'info': self.parse_info,
-            'response': self.parse_response
-	    # More key:values pairs are needed	
+            'message': self.parse_response,
+            'history': self.parse_history
         }
 
     def parse(self, payload):
-
         payload = json.loads(payload)  # decode the JSON object
 
         if payload['response'] in self.possible_responses:
             return self.possible_responses[payload['response']](payload)
         else:
-
             pass
 
     def parse_error(self, payload):
-        pass
+        return payload['content']
 
     def parse_info(self, payload):
-        pass
+        return payload['content']
+
     def parse_response(self, payload):
-        pass
+        return payload['sender'] + ": " + payload['content']
+
+    def parse_history(self, payload):
+        return
 
     # Include more methods for handling the different responses... 
