@@ -75,10 +75,6 @@ class Client:
     def disconnect(self):
         self.connection.close()
 
-    def receive_message(self, message):
-        pass
-        # This method is not supposed to be used?
-
     def send_payload(self, data):
         # TODO: Handle sending of a payload
 

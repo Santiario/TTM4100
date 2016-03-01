@@ -1,5 +1,4 @@
 import json
-import math
 
 class MessageParser():
     def __init__(self):
