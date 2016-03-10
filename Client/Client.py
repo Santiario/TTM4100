@@ -13,7 +13,6 @@ class Client:
         """
         This method is run when creating a new Client object
         """
-
         self.host = host
         self.server_port = server_port
 

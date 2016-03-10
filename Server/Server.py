@@ -2,12 +2,15 @@
 import SocketServer
 import json
 import time
+import re
+
 """
 Variables and functions that must be used by all the ClientHandler objects
 must be written here (e.g. a dictionary for connected clients)
 """
 
-connected_clients = {}
+connected_clients = {}  # The users are added when they successfully log in on the format client:'username'
+history = []
 
 
 class ClientHandler(SocketServer.BaseRequestHandler):
@@ -17,84 +20,82 @@ class ClientHandler(SocketServer.BaseRequestHandler):
     only connected clients, and not the server itself. If you want to write
     logic for the server, you must write it outside this class
     """
+    def __init__(self, request, client_address, server):
+        SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def handle(self):
         """
         This method handles the connection between a client and the server.
         """
-        self.ip = self.client_address[0]
-        self.port = self.client_address[1]
-        self.connection = self.request
-
-
-
 
         # Loop that listens for messages from the client
         while True:
-            received_string = self.connection.recv(4096)
-            message = json.loads(received_string)
-            request = message['request']
-            if request == 'login':
+            received_json = self.request.recv(4096)
+            message = json.loads(received_json)  # Decodes the JSON object
+
+            if message['request'] == 'login':
                 user_taken = False
                 for username in connected_clients.values():
                     if message['content'] == username:
                         user_taken = True
-                if user_taken:
-                    payload = {
-                         'timestamp': time.time(),
-                         'sender': "SERVER",
-                         'response': 'error',
-                         'content': 'Username taken.\n'
-                     }
-                    self.connection.sendall(json.dumps(payload))
-                else:
-                    connected_clients[self] = message['content']
-                    payload = {
-                         'timestamp': time.time(),
-                         'sender': "SERVER",
-                         'response': 'info',
-                         'content': 'Login successful.\n'
-                     }
-                    self.connection.sendall(json.dumps(payload))
-                    print message['content'] + " connected to server."
 
-                    login_alert = {
-                         'timestamp': time.time(),
-                         'sender': "SERVER",
-                         'response': 'message',
-                         'content': message['content'] + " joined the chatroom"
-                     }
-                    json_object = json.dumps(login_alert)
-                    for client in connected_clients:
-                        if client == self:
-                            continue
-                        client.connection.sendall(json_object)
-            elif request == 'logout':
+                if user_taken:
+                    self.request.sendall(self.make_payload('SERVER', 'error', 'Username taken.'))  # Sends rejection to the client
+
+                if not self.valid_username(message['content']):
+                    self.request.sendall(self.make_payload('SERVER', 'error', 'Invalid username'))
+
+                else:  # The username is valid and not taken
+                    connected_clients[self] = message['content']  # Adds the client to the global connected_clients
+                    self.request.sendall(self.make_payload('SERVER', 'info', 'Login successful.'))
+                    print message['content'] + " connected to server."
+                    self.send_to_all_other_clients(self.make_payload('SERVER', 'message', message['content'] + " joined the chatroom"))
+                    for message in history:
+                        time.sleep(0.1)
+                        self.request.send(message)
+
+            elif message['request'] == 'logout':
                 print connected_clients[self] + ' left the server'
                 connected_clients.pop(self)
-                self.connection.close()
+                self.request.close()
                 break
-            elif request == 'msg':
-                payload = {
-                     'timestamp': time.time(),
-                     'sender': connected_clients[self],
-                     'response': 'message',
-                     'content': message['content']
-                 }
-                json_object = json.dumps(payload)
-                for client in connected_clients:
-                    if client == self:
-                        continue
-                    client.connection.sendall(json_object)
-            elif request == 'names':
-                for client in connected_clients:
-                    client.connection.sendall(connected_clients.values())
-            elif request == 'help':
-                self.connection.sendall("Velkommen til Chatteklient 2000.\nDette er en ny feature")
+
+            elif message['request'] == 'msg':
+                payload = self.make_payload(connected_clients[self], 'message', message['content'])
+                history.append(payload)
+                self.send_to_all_other_clients(payload)
+
+            elif message['request'] == 'names':
+                self.request.sendall(self.make_payload('SERVER', 'info', connected_clients.values()))
+
+            elif message['request'] == 'help':
+                self.request.sendall(self.make_payload('SERVER', 'info', "login <username> - log in with the given username \n\
+                                logout - log out \n\
+                                <message> - send message \n\
+                                names - list users in chat\n\
+                                help - view help text"))
             else:
-                self.connection.sendall("Not a valid message")
+                self.request.sendall(self.make_payload('SERVER', 'error', 'Not a valid argument'))
 
+    def send_to_all_other_clients(self, payload):
+        for client in connected_clients:
+            if client == self:
+                continue
+            client.request.sendall(payload)
 
+    @staticmethod
+    def make_payload(sender, response, content):
+        payload = {
+                     'timestamp': time.time(),
+                     'sender': sender,
+                     'response': response,
+                     'content': content
+                 }
+        return json.dumps(payload)
+
+    @staticmethod
+    def valid_username(username):
+        return re.match('[a-zA-Z0-9]+', username)
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     """
