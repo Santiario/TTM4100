@@ -45,7 +45,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     if user_taken:
                         self.request.sendall(self.make_payload('SERVER', 'error', 'Username taken.'))
 
-                    if not self.valid_username(message['content']):
+                    elif not self.valid_username(message['content']):
                         self.request.sendall(self.make_payload('SERVER', 'error', 'Invalid username'))
 
                     else:  # The username is valid and not taken
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     No alterations are necessary
     """
-    HOST, PORT = 'localhost', 9998
+    HOST, PORT = '0.0.0.0', 9998
     print 'Server running...'
 
     # Set up and initiate the TCP server
@@ -128,4 +128,4 @@ if __name__ == "__main__":
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print 'Server halted.'
+        print 'Server halted.' 
