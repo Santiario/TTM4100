@@ -22,23 +22,21 @@ class Client:
 
         # Instantiate a MessageReciever to handle recieved messages in parallell
         # MessageReceiver calls receive_message to print the message to the console
-        self.parser = MessageParser()
-        self.receiver = MessageReceiver(self, self.connection, self.parser)
+        self.receiver = MessageReceiver(self, self.connection)
         self.run()
 
     def connect(self):
         self.connection.connect((self.host, self.server_port))
-        self.logged_in = False
-        while not self.logged_in:
+        logged_in = False
+        while not logged_in:
             username = raw_input('Please enter username: ')
             self.login(username)
             response = json.loads(self.connection.recv(4096))
             if response['response'] == 'info':
-                self.logged_in = True
+                logged_in = True
                 print response['content']
             else:
                 print response['response'] + ": " + response['content']
-
 
     def run(self):
         # Code that runs in a loop until the user exits
@@ -46,7 +44,7 @@ class Client:
             command = raw_input()
             if command.lower() == 'logout' or \
                 command.lower() == 'names' or \
-                command.lower() == 'help':
+                    command.lower() == 'help':
                 payload = {
                     'request': command.lower(),
                     'content': None
@@ -73,16 +71,6 @@ class Client:
 
     def disconnect(self):
         self.connection.close()
-
-    def send_payload(self, data):
-        # TODO: Handle sending of a payload
-
-        self.connection.send(data)
-        print "Payload sent"
-        pass
-        
-    # More methods may be needed!
-
 
 if __name__ == '__main__':
     """

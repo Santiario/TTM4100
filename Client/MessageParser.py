@@ -1,6 +1,7 @@
 import json
 
-class MessageParser():
+
+class MessageParser:
     def __init__(self):
 
         self.possible_responses = {
@@ -18,16 +19,23 @@ class MessageParser():
         else:
             pass
 
-    def parse_error(self, payload):
+    @staticmethod
+    def parse_error(payload):
         return payload['content']
 
-    def parse_info(self, payload):
+    @staticmethod
+    def parse_info(payload):
         return payload['content']
 
-    def parse_response(self, payload):
+    @staticmethod
+    def parse_response(payload):
         return payload['sender'] + ": " + payload['content']
 
-    def parse_history(self, payload):
-        return
+    @staticmethod
+    def parse_history(payload):
+        messages = ''
+        for jsonobj in payload['content']:
+            message = json.loads(jsonobj)
+            messages += message['sender'] + ": " + message['content'] + '\n'
+        return messages[:-1]
 
-    # Include more methods for handling the different responses... 

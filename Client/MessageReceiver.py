@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
+from MessageParser import MessageParser
 
 
 class MessageReceiver(Thread):
@@ -9,7 +10,7 @@ class MessageReceiver(Thread):
     the chat client to both send and receive messages at the same time
     """
 
-    def __init__(self, client, connection, parser):
+    def __init__(self, client, connection):
         super(MessageReceiver, self).__init__()
         """
         This method is executed when creating a new MessageReceiver object
@@ -18,15 +19,12 @@ class MessageReceiver(Thread):
         # Flag to run thread as a deamon. A deamon is a process that runs in the background.
         self.daemon = True
 
-
-        # TODO: Finish initialization of MessageReceiver
+        self.parser = MessageParser()
         self.client = client
         self.connection = connection
-        self.parser = parser
         self.start()
 
     def run(self):
-        # TODO: Make MessageReceiver receive and handle payloads
         while True:
             received_message = self.connection.recv(4096)
             print self.parser.parse(received_message)
