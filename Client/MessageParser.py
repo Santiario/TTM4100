@@ -38,4 +38,3 @@ class MessageParser:
             message = json.loads(jsonobj)
             messages += message['sender'] + ": " + message['content'] + '\n'
         return messages[:-1]
-

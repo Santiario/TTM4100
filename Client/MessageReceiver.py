@@ -28,4 +28,3 @@ class MessageReceiver(Thread):
         while True:
             received_message = self.connection.recv(4096)
             print self.parser.parse(received_message)
-
