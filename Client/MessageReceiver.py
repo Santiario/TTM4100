@@ -27,4 +27,7 @@ class MessageReceiver(Thread):
     def run(self):
         while True:
             received_message = self.connection.recv(4096)
-            print self.parser.parse(received_message)
+            try:
+                print self.parser.parse(received_message)
+            except:
+                pass
